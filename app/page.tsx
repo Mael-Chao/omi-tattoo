@@ -46,7 +46,7 @@ const HOURS = [
 ];
 
 // FOTOS: cuando subas las fotos reales del Instagram del cliente a
-// /public/tattoos (01.webp ... 24.webp), cambia esto a true.
+// /public/tattoos (01.jpg ... 24.jpg), cambia esto a true.
 // Mientras sea false se usan fotos de picsum como placeholder.
 const USE_LOCAL_PHOTOS = true;
 const photo = (n: number, w = 600, h = 800) =>
@@ -74,7 +74,8 @@ const BENTO = [
   "col-span-12 md:col-span-3",
 ];
 
-// PROCESO: copy corto, confirmar con el cliente.
+// PROCESO: copy corto, confirmar con el cliente. Solo se muestra en
+// pantallas md (768px) en adelante; en movil esta seccion no se renderiza.
 const STEPS = [
   { n: "01", title: "Consulta", text: "Cuéntanos tu idea, la zona y el tamaño que tienes en mente. Escríbenos por WhatsApp o pasa por el estudio." },
   { n: "02", title: "Diseño", text: "Con tu referencia se prepara un diseño propio, pensado para tu piel." },
@@ -169,6 +170,12 @@ export default function Page() {
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+    // Fixes para Chrome movil real: evita que el redimensionado por la
+    // barra de direcciones dispare refresh, y normaliza el scroll tactil
+    // para que el pin de ScrollTrigger no se desincronice.
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    ScrollTrigger.normalizeScroll(true);
+
     if (!rootRef.current) return;
     let cleanupMagnet: (() => void) | undefined;
 
@@ -188,39 +195,38 @@ export default function Page() {
         });
       }
 
-      ScrollTrigger.config({ ignoreMobileResize: true }); // evita refresh al mostrar/ocultar la barra del navegador
+      // PROCESO: seccion pinned con scrub. Solo existe en md (768px) en
+      // adelante: en movil la seccion esta oculta (hidden md:block) y aqui
+      // evitamos crear el ScrollTrigger para no medir un elemento oculto.
+      if (processRef.current && window.innerWidth >= 768) {
+        const steps = gsap.utils.toArray<HTMLElement>("[data-step]");
+        gsap.set(steps, { autoAlpha: 0, y: 60 });
+        gsap.set(steps[0], { autoAlpha: 1, y: 0 });
 
-// PROCESO: seccion pinned con scrub
-if (processRef.current) {
-  const steps = gsap.utils.toArray<HTMLElement>("[data-step]");
-  gsap.set(steps, { autoAlpha: 0, y: 60 });
-  gsap.set(steps[0], { autoAlpha: 1, y: 0 });
-
-  const tl = gsap.timeline({
-    defaults: { ease: "none" },
-    scrollTrigger: {
-      trigger: processRef.current,
-      start: "top top",
-      end: "+=300%",
-      pin: true,
-      scrub: 0.6,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-    },
-  });
-  tl.fromTo("[data-bar]", { scaleX: 0 }, { scaleX: 1, duration: 3.5 }, 0);
-  for (let i = 1; i < steps.length; i++) {
-    const t = i - 0.5;
-    // primero sale el anterior, luego entra el siguiente (nunca coexisten)
-    tl.to(steps[i - 1], { autoAlpha: 0, y: -60, duration: 0.25 }, t);
-    tl.fromTo(
-      steps[i],
-      { autoAlpha: 0, y: 60 },
-      { autoAlpha: 1, y: 0, duration: 0.25, immediateRender: false },
-      t + 0.25
-    );
-  }
-}
+        const tl = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: {
+            trigger: processRef.current,
+            start: "top top",
+            end: "+=300%",
+            pin: true,
+            scrub: 0.6,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+        tl.fromTo("[data-bar]", { scaleX: 0 }, { scaleX: 1, duration: 3.5 }, 0);
+        for (let i = 1; i < steps.length; i++) {
+          const t = i - 0.5;
+          tl.to(steps[i - 1], { autoAlpha: 0, y: -60, duration: 0.25 }, t);
+          tl.fromTo(
+            steps[i],
+            { autoAlpha: 0, y: 60 },
+            { autoAlpha: 1, y: 0, duration: 0.25, immediateRender: false },
+            t + 0.25
+          );
+        }
+      }
 
       // REVEALS de titulares
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
@@ -269,18 +275,22 @@ if (processRef.current) {
   }, [reduced]);
 
   return (
-    <main ref={rootRef} className={`${outfit.className} w-full max-w-full bg-[#0A0A0A] text-[#EDE8DF]`}>
+    <main
+      ref={rootRef}
+      className={`${outfit.className} w-full max-w-full bg-[#0A0A0A] text-[#EDE8DF]`}
+    >
       <style>{`
+        html, body { overflow-x: hidden; max-width: 100%; }
         .omi-grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.09;mix-blend-mode:overlay;
           background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
         @keyframes omi-scroll{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
-        .omi-scroll-line{animation:omi-scroll 2.2s ease-in-out infinite}  html, body { overflow-x: hidden; max-width: 100%; }
+        .omi-scroll-line{animation:omi-scroll 2.2s ease-in-out infinite}
         @media (prefers-reduced-motion: reduce){.omi-scroll-line{animation:none}}
       `}</style>
       <div className="omi-grain" aria-hidden="true" />
 
       {/* NAVBAR */}
-      {/* <header className="fixed inset-x-0 top-0 z-40 border-b border-[#EDE8DF]/10 bg-[#0A0A0A]/30 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-[#EDE8DF]/10 bg-[#0A0A0A]/30 backdrop-blur-md">
         <nav className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-6 md:px-12">
           <a href="#inicio" className="text-xl font-extrabold tracking-[0.25em]">OMI</a>
           <a
@@ -292,7 +302,7 @@ if (processRef.current) {
             Reservar
           </a>
         </nav>
-      </header> */}
+      </header>
 
       {/* 1. HERO */}
       <section id="inicio" className="relative h-[100svh] min-h-[640px] w-full overflow-hidden">
@@ -404,9 +414,11 @@ if (processRef.current) {
         </div>
       </section>
 
-      {/* 3. PROCESO (pinned) */}
+      {/* 3. PROCESO (pinned) — SOLO DESKTOP/TABLET (md: 768px+). En movil
+          esta seccion no se renderiza en absoluto, ni en la variante
+          reducida ni en la animada. */}
       {reduced ? (
-        <section id="proceso" className="border-y border-[#EDE8DF]/10 px-6 py-32 md:px-12">
+        <section id="proceso" className="hidden border-y border-[#EDE8DF]/10 px-6 py-32 md:block md:px-12">
           <div className="mx-auto max-w-[1600px] divide-y divide-[#EDE8DF]/10">
             {STEPS.map((s) => (
               <div key={s.n} className="grid grid-cols-12 items-center gap-6 py-12">
@@ -419,28 +431,28 @@ if (processRef.current) {
             ))}
           </div>
         </section>
-) : (
-  <section ref={processRef} id="proceso" className="relative h-[100svh] w-full overflow-hidden border-y border-[#EDE8DF]/10">
-    {STEPS.map((s) => (
-      <div
-        key={s.n}
-        data-step
-        className="absolute inset-0 mx-auto grid max-w-[1600px] grid-cols-12 content-center items-center gap-x-6 gap-y-4 px-6 md:px-12"
-      >
-        <span className="col-span-12 text-[clamp(7rem,24vw,24rem)] font-extrabold leading-none text-transparent [-webkit-text-stroke:2px_#C1121F] md:col-span-5">
-          {s.n}
-        </span>
-        <div className="col-span-12 md:col-span-7">
-          <h3 className="text-[clamp(2.5rem,6vw,6rem)] font-extrabold uppercase leading-none tracking-tight">{s.title}</h3>
-          <p className="mt-4 max-w-xl text-base font-light text-[#EDE8DF]/70 md:mt-6 md:text-xl">{s.text}</p>
-        </div>
-      </div>
-    ))}
-    <div className="absolute inset-x-6 bottom-12 h-px bg-[#EDE8DF]/15 md:inset-x-12">
-      <div data-bar className="h-full origin-left bg-[#C1121F]" />
-    </div>
-  </section>
-)}
+      ) : (
+        <section ref={processRef} id="proceso" className="relative hidden h-[100svh] w-full overflow-hidden border-y border-[#EDE8DF]/10 md:block">
+          {STEPS.map((s) => (
+            <div
+              key={s.n}
+              data-step
+              className="absolute inset-0 mx-auto grid max-w-[1600px] grid-cols-12 content-center items-center gap-x-6 gap-y-4 px-6 md:px-12"
+            >
+              <span className="col-span-12 text-[clamp(7rem,24vw,24rem)] font-extrabold leading-none text-transparent [-webkit-text-stroke:2px_#C1121F] md:col-span-5">
+                {s.n}
+              </span>
+              <div className="col-span-12 md:col-span-7">
+                <h3 className="text-[clamp(2.5rem,6vw,6rem)] font-extrabold uppercase leading-none tracking-tight">{s.title}</h3>
+                <p className="mt-4 max-w-xl text-base font-light text-[#EDE8DF]/70 md:mt-6 md:text-xl">{s.text}</p>
+              </div>
+            </div>
+          ))}
+          <div className="absolute inset-x-6 bottom-12 h-px bg-[#EDE8DF]/15 md:inset-x-12">
+            <div data-bar className="h-full origin-left bg-[#C1121F]" />
+          </div>
+        </section>
+      )}
 
       {/* 4. ESTUDIO / FIRMA */}
       <section id="estudio" className="px-6 py-32 md:px-12 md:py-48">
