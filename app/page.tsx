@@ -269,15 +269,12 @@ if (processRef.current) {
   }, [reduced]);
 
   return (
-    <main
-      ref={rootRef}
-      className={`${outfit.className} w-full max-w-full overflow-x-clip bg-[#0A0A0A] text-[#EDE8DF]`}
-    >
+    <main ref={rootRef} className={`${outfit.className} w-full max-w-full bg-[#0A0A0A] text-[#EDE8DF]`}>
       <style>{`
         .omi-grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.09;mix-blend-mode:overlay;
           background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
         @keyframes omi-scroll{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
-        .omi-scroll-line{animation:omi-scroll 2.2s ease-in-out infinite}
+        .omi-scroll-line{animation:omi-scroll 2.2s ease-in-out infinite}  html, body { overflow-x: hidden; max-width: 100%; }
         @media (prefers-reduced-motion: reduce){.omi-scroll-line{animation:none}}
       `}</style>
       <div className="omi-grain" aria-hidden="true" />
