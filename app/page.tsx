@@ -46,12 +46,12 @@ const HOURS = [
 ];
 
 // FOTOS: cuando subas las fotos reales del Instagram del cliente a
-// /public/tattoos (01.jpg ... 24.jpg), cambia esto a true.
+// /public/tattoos (01.webp ... 24.webp), cambia esto a true.
 // Mientras sea false se usan fotos de picsum como placeholder.
 const USE_LOCAL_PHOTOS = true;
 const photo = (n: number, w = 600, h = 800) =>
   USE_LOCAL_PHOTOS
-    ? `/tattoos/${String(n).padStart(2, "0")}.jpg`
+    ? `/tattoos/${String(n).padStart(2, "0")}.webp`
     : `https://picsum.photos/seed/omi-tattoo-${n}/${w}/${h}`;
 
 // ESTILOS: placeholders NO confirmados. Reemplazar nombres y descripciones
